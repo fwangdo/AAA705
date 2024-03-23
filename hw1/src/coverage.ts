@@ -131,7 +131,7 @@ export class Coverage {
       },
       VariableDeclaration(decl) { // stmt 
         const { type, declarations, kind } = decl;
-        for (const decl of declarations) { walk.recursive(decl, null, visitor) }; // sus
+        // for (const decl of declarations) { walk.recursive(decl, null, visitor) }; // sus
         const sid = scount++;
         stmtTarget[sid] = Range.fromNode(code, decl);
         const countExpr = createExpr(`__cov__.stmt.add(${sid});`)
@@ -146,16 +146,41 @@ export class Coverage {
         }
         temp.init = newDecl
       },
-      AssignmentPattern(pattern) {
-        },
+      AssignmentPattern(pattern) { // stmt
+        const { type, left, right } = pattern;
+        const sid = scount++;
+        stmtTarget[sid] = Range.fromNode(code, pattern);
+        const countExpr = createExpr(`__cov__.stmt.add(${sid});`)
+
+        // main
+        const temp = right;
+        const newDecl = createSeqExpr([countExpr, right])
+        pattern.right = newDecl
+      },
       BlockStatement(node) {
         node.body = walkStmts(node.body);
       },
-      SwitchStatement(stmt) { todo("SwitchStatement"); },
-      StaticBlock(node) { todo("StaticBlock"); },
-      IfStatement(stmt) { todo("IfStatement"); },
-      ConditionalExpression(expr) { todo("ConditionalExpression"); },
-      LogicalExpression(node) { todo("LogicalExpression"); },
+      SwitchStatement(stmt) { // TODO; branch 
+        // const { type, discriminant, cases } = stmt;
+        // const sid = scount++;
+
+        // for (const c of cases) { 
+        //   stmtTarget[sid] = Range.fromNode(code, pattern);
+        //   const countExpr = createExpr(`__cov__.stmt.add(${sid});`)
+        //   walk.recursive(param, null, visitor); 
+        // }
+
+        // // main
+        // const temp = right;
+        // const newDecl = createSeqExpr([countExpr, right])
+        // pattern.right = newDecl
+      },
+      StaticBlock(node) { 
+        todo("StaticBlock"); 
+      },
+      IfStatement(stmt) { todo("IfStatement"); }, // branch 
+      ConditionalExpression(expr) { todo("ConditionalExpression"); }, // expr 
+      LogicalExpression(node) { todo("LogicalExpression"); }, // expr 
       LabeledStatement(node) { todo("LabeledStatement"); },
       WhileStatement(node) { todo("WhileStatement"); },
       DoWhileStatement(node) { todo("DoWhileStatement"); },
