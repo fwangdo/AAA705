@@ -153,31 +153,28 @@ export class Coverage {
         const countExpr = createExpr(`__cov__.stmt.add(${sid});`)
 
         // main
-        const temp = right;
         const newDecl = createSeqExpr([countExpr, right])
         pattern.right = newDecl
       },
       BlockStatement(node) {
         node.body = walkStmts(node.body);
       },
-      SwitchStatement(stmt) { // TODO; branch 
-        // const { type, discriminant, cases } = stmt;
-        // const sid = scount++;
-
-        // for (const c of cases) { 
-        //   stmtTarget[sid] = Range.fromNode(code, pattern);
-        //   const countExpr = createExpr(`__cov__.stmt.add(${sid});`)
-        //   walk.recursive(param, null, visitor); 
-        // }
-
-        // // main
-        // const temp = right;
-        // const newDecl = createSeqExpr([countExpr, right])
-        // pattern.right = newDecl
+      SwitchStatement(stmt) { // branch 
+        const { type, discriminant, cases } = stmt;
+        
+        for (const c of cases) { 
+          const bid = bcount++;
+          branchTarget[bid] = Range.fromNode(code, c);
+          
+          const { type:t2, test, consequent  } = c;
+          const countStmt = createStmt(`__cov__.branch.add(${bid});`)
+          for (const cons of consequent) { walk.recursive(cons, null, visitor) }
+          consequent.unshift(countStmt)
+        }
       },
       StaticBlock(node) { 
-        todo("StaticBlock"); 
-      },
+        node.body = walkStmts(node.body);
+      }, 
       IfStatement(stmt) { // branch 
         const { type, test, consequent, alternate } = stmt;
 
@@ -212,7 +209,21 @@ export class Coverage {
         expr.alternate = newAlternate
         expr.consequent = newConsequent
       }, 
-      LogicalExpression(node) { todo("LogicalExpression"); }, // expr 
+      LogicalExpression(node) { 
+        const { type, operator, left, right } = node;
+        walk.recursive(left, null, visitor);
+        walk.recursive(right, null, visitor);
+        const bid1 = bcount++;
+        const bid2 = bcount++;
+        branchTarget[bid1] = Range.fromNode(code, left);
+        branchTarget[bid2] = Range.fromNode(code, right);
+        const countExpr1 = createExpr(`__cov__.branch.add(${bid1});`)
+        const countExpr2 = createExpr(`__cov__.branch.add(${bid2});`)
+        const newLeft = createSeqExpr([countExpr1, left])
+        const newRight = createSeqExpr([countExpr2, right])
+        node.left = newLeft
+        node.right = newRight
+      }, 
       LabeledStatement(node) { todo("LabeledStatement"); },
       WhileStatement(node) { todo("WhileStatement"); },
       DoWhileStatement(node) { todo("DoWhileStatement"); },
