@@ -33,6 +33,7 @@ import {
 import walk from 'acorn-walk';
 
 import { generate } from 'escodegen';
+import { count } from 'console';
 
 // Coverage target
 interface CoverageTarget {
@@ -116,8 +117,11 @@ export class Coverage {
           const stmts = blockStmt.body;
           blockStmt.body = walkStmts(stmts);
           blockStmt.body.unshift(countStmt);
-        } else {
-          todo("Function");
+        } else { // Expression. 
+          const stmt = createReturnStmt(body);
+          const newBlock = toBlockStmt(stmt);
+          newBlock.body = walkStmts(newBlock.body);
+          newBlock.body.unshift(countStmt);
         }
       },
       VariableDeclaration(decl) { todo("VariableDeclaration"); },
