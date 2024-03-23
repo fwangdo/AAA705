@@ -121,6 +121,9 @@ export class Range {
   static fromNode(code: string, node: Node): Range {
     return Range.fromCode(code, node.start, node.end);
   }
+  static fromNodeToLast(code: string, node: Node): Range {
+    return Range.fromCode(code, node.end, node.end);
+  }
 
   toString = (): string => `${this.start.toString()}-${this.end.toString()}`;
 }

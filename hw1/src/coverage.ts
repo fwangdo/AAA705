@@ -137,14 +137,16 @@ export class Coverage {
         const countExpr = createExpr(`__cov__.stmt.add(${sid});`)
 
         // main
-        const temp = declarations[0] as VariableDeclarator;
+        const temp = declarations.shift() as VariableDeclarator;
         const { type:t2, id, init } = temp;
-        const newDecl = createSeqExpr([countExpr])
-        if (!(init === undefined) && !(init == null)) {
-          init as Expression; 
+        if (!(!init)) {
           const newDecl = createSeqExpr([countExpr, init])
+          temp.init = newDecl
+        } else {
+          const newDecl = countExpr
+          temp.init = newDecl
         }
-        temp.init = newDecl
+        declarations.unshift(temp)
       },
       AssignmentPattern(pattern) { // stmt
         const { type, left, right } = pattern;
@@ -187,14 +189,15 @@ export class Coverage {
         stmt.consequent = newConsequent
 
         // else case. 
-        if (!(alternate === undefined) && !(alternate == null)) {
-          walk.recursive(alternate, null, visitor);
-          const bid2 = bcount++;
+        const bid2 = bcount++;
+        const countStmt2 = createStmt(`__cov__.branch.add(${bid2});`)
+        if (!(!alternate)) {
           branchTarget[bid2] = Range.fromNode(code, alternate);
-          const countStmt2 = createStmt(`__cov__.branch.add(${bid2});`)
-          const newConsequent2 = prependStmt(countStmt2, alternate)
-          stmt.alternate = newConsequent2
-        }
+          walk.recursive(alternate, null, visitor);
+        } 
+        const newConsequent2 = prependStmt(countStmt2, alternate)
+        stmt.alternate = newConsequent2
+        branchTarget[bid2] = Range.fromNodeToLast(code, consequent) 
       }, 
       ConditionalExpression(expr) { // branch . 
         const { type, test, alternate, consequent } = expr;
