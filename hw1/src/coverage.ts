@@ -178,8 +178,40 @@ export class Coverage {
       StaticBlock(node) { 
         todo("StaticBlock"); 
       },
-      IfStatement(stmt) { todo("IfStatement"); }, // branch 
-      ConditionalExpression(expr) { todo("ConditionalExpression"); }, // expr 
+      IfStatement(stmt) { // branch 
+        const { type, test, consequent, alternate } = stmt;
+
+        // if case.
+        walk.recursive(consequent, null, visitor);
+        const bid1 = bcount++;
+        branchTarget[bid1] = Range.fromNode(code, consequent);
+        const countStmt = createStmt(`__cov__.branch.add(${bid1});`)
+        const newConsequent = prependStmt(countStmt, consequent)
+        stmt.consequent = newConsequent
+
+        // else case. 
+        if (!(alternate === undefined) && !(alternate == null)) {
+          walk.recursive(alternate, null, visitor);
+          const bid2 = bcount++;
+          branchTarget[bid2] = Range.fromNode(code, alternate);
+          const countStmt2 = createStmt(`__cov__.branch.add(${bid2});`)
+          const newConsequent2 = prependStmt(countStmt2, alternate)
+          stmt.alternate = newConsequent2
+        }
+      }, 
+      ConditionalExpression(expr) { // branch . 
+        const { type, test, alternate, consequent } = expr;
+        const bid1 = bcount++;
+        const bid2 = bcount++;
+        branchTarget[bid1] = Range.fromNode(code, alternate);
+        branchTarget[bid2] = Range.fromNode(code, consequent);
+        const countExpr1 = createExpr(`__cov__.branch.add(${bid1});`)
+        const countExpr2 = createExpr(`__cov__.branch.add(${bid2});`)
+        const newAlternate = createSeqExpr([countExpr1, alternate])
+        const newConsequent = createSeqExpr([countExpr2, consequent])
+        expr.alternate = newAlternate
+        expr.consequent = newConsequent
+      }, 
       LogicalExpression(node) { todo("LogicalExpression"); }, // expr 
       LabeledStatement(node) { todo("LabeledStatement"); },
       WhileStatement(node) { todo("WhileStatement"); },
