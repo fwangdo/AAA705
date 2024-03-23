@@ -224,12 +224,44 @@ export class Coverage {
         node.left = newLeft
         node.right = newRight
       }, 
-      LabeledStatement(node) { todo("LabeledStatement"); },
-      WhileStatement(node) { todo("WhileStatement"); },
-      DoWhileStatement(node) { todo("DoWhileStatement"); },
-      ForStatement(node) { todo("ForStatement"); },
-      ForInStatement(node) { todo("ForInStatement"); },
-      ForOfStatement(node) { todo("ForOfStatement"); },
+      LabeledStatement(node) { 
+        const { label, body } = node; 
+        walk.recursive(body, null, visitor)
+      },
+      WhileStatement(node) { 
+        const { test, body } = node;
+        walk.recursive(body, null, visitor)
+      },
+      DoWhileStatement(node) { 
+        const { body, test } = node;
+        walk.recursive(body, null, visitor)
+        walk.recursive(test, null, visitor)
+      },
+      ForStatement(node) { 
+        const { type, init, test, update, body } = node;
+        if (!(!init)) {
+          walk.recursive(init, null, visitor)
+        }
+        if (!(!test)) {
+          walk.recursive(test, null, visitor)
+        }
+        if (!(!update)) {
+          walk.recursive(update, null, visitor)
+        }
+        walk.recursive(body, null, visitor)
+      },
+      ForInStatement(node) { 
+        const { type, left, right, body } = node;
+        walk.recursive(left, null, visitor)
+        walk.recursive(right, null, visitor)
+        walk.recursive(body, null, visitor)
+      },
+      ForOfStatement(node) { 
+        const { type, left, right, body, await } = node;
+        walk.recursive(left, null, visitor)
+        walk.recursive(right, null, visitor)
+        walk.recursive(body, null, visitor)
+      },
     }
 
     // Instrument the sequence of statements
