@@ -35,6 +35,11 @@ import walk from 'acorn-walk';
 import { generate } from 'escodegen';
 import { count } from 'console';
 
+//additional. 
+import {
+  VariableDeclarator
+} from 'acorn';
+
 // Coverage target
 interface CoverageTarget {
   [key: number]: Range;
@@ -124,8 +129,25 @@ export class Coverage {
           newBlock.body.unshift(countStmt);
         }
       },
-      VariableDeclaration(decl) { todo("VariableDeclaration"); },
-      AssignmentPattern(pattern) { todo("AssignmentPattern"); },
+      VariableDeclaration(decl) { // stmt 
+        const { type, declarations, kind } = decl;
+        for (const decl of declarations) { walk.recursive(decl, null, visitor) }; // sus
+        const sid = scount++;
+        stmtTarget[sid] = Range.fromNode(code, decl);
+        const countExpr = createExpr(`__cov__.stmt.add(${sid});`)
+
+        // main
+        const temp = declarations[0] as VariableDeclarator;
+        const { type:t2, id, init } = temp;
+        const newDecl = createSeqExpr([countExpr])
+        if (!(init === undefined) && !(init == null)) {
+          init as Expression; 
+          const newDecl = createSeqExpr([countExpr, init])
+        }
+        temp.init = newDecl
+      },
+      AssignmentPattern(pattern) {
+        },
       BlockStatement(node) {
         node.body = walkStmts(node.body);
       },
