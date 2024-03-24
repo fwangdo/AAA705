@@ -39,6 +39,7 @@ import { count } from 'console';
 import {
   VariableDeclarator
 } from 'acorn';
+import { allowedNodeEnvironmentFlags } from 'process';
 
 // Coverage target
 interface CoverageTarget {
@@ -124,6 +125,7 @@ export class Coverage {
           blockStmt.body = walkStmts(stmts);
           blockStmt.body.unshift(countStmt);
         } else { // Expression. 
+          walk.recursive(body, null, visitor)
           const sid = scount++;
           stmtTarget[sid] = Range.fromNode(code, body);
           const countExpr = createExpr(`__cov__.stmt.add(${sid});`)
@@ -133,22 +135,22 @@ export class Coverage {
       },
       VariableDeclaration(decl) { // stmt 
         const { type, declarations, kind } = decl;
-        // for (const decl of declarations) { walk.recursive(decl, null, visitor) }; // sus
-        const sid = scount++;
-        stmtTarget[sid] = Range.fromNode(code, decl);
-        const countExpr = createExpr(`__cov__.stmt.add(${sid});`)
-        
-        // main
-        const temp = declarations.shift() as VariableDeclarator;
-        const { type:t2, id, init } = temp;
-        if (!(!init)) {
-          const newDecl = createSeqExpr([countExpr, init])
-          temp.init = newDecl
-        } else {
-          const newDecl = countExpr
-          temp.init = newDecl
+        for (const curDecl of declarations) { 
+          const sid = scount++;
+          stmtTarget[sid] = Range.fromNode(code, curDecl);
+          const countExpr = createExpr(`__cov__.stmt.add(${sid});`)
+          
+          // main
+          const { type:t2, id, init } = curDecl;
+          if (init) {
+            walk.recursive(init, null, visitor)
+            const newDecl = createSeqExpr([countExpr, init])
+            curDecl.init = newDecl
+          } else {
+            const newDecl = countExpr
+            curDecl.init = newDecl
+          }
         }
-        declarations.unshift(temp)
       },
       AssignmentPattern(pattern) { // stmt
         const { type, left, right } = pattern;
@@ -183,51 +185,66 @@ export class Coverage {
         const { type, test, consequent, alternate } = stmt;
 
         // if case.
-        walk.recursive(consequent, null, visitor);
+        const blockConsequent = toBlockStmt(consequent)
+        stmt.consequent = blockConsequent
+        walk.recursive(blockConsequent, null, visitor) 
         const bid1 = bcount++;
         branchTarget[bid1] = Range.fromNode(code, consequent);
         const countStmt = createStmt(`__cov__.branch.add(${bid1});`)
-        const newConsequent = prependStmt(countStmt, consequent)
-        stmt.consequent = newConsequent
+        const genConsequent = prependStmt(countStmt, blockConsequent)
+        stmt.consequent = genConsequent
 
         // else case. 
         const bid2 = bcount++;
         const countStmt2 = createStmt(`__cov__.branch.add(${bid2});`)
-        if (!(!alternate)) {
+        if (alternate) {
           branchTarget[bid2] = Range.fromNode(code, alternate);
-          walk.recursive(alternate, null, visitor);
+          const blockAlternate = toBlockStmt(alternate)
+          stmt.alternate = blockAlternate
+          walk.recursive(blockAlternate, null ,visitor)
+          const newAlternate = prependStmt(countStmt2, blockAlternate)
+          stmt.alternate = newAlternate
+        } else {
+          branchTarget[bid2] = Range.fromNodeToLast(code, consequent) 
+          const newAlternate = prependStmt(countStmt2, null)
+          stmt.alternate = newAlternate
         } 
-        const newConsequent2 = prependStmt(countStmt2, alternate)
-        stmt.alternate = newConsequent2
-        branchTarget[bid2] = Range.fromNodeToLast(code, consequent) 
       }, 
       ConditionalExpression(expr) { // branch . 
         const { type, test, alternate, consequent } = expr;
         const bid1 = bcount++;
+        walk.recursive(alternate, null, visitor);
         const bid2 = bcount++;
+        walk.recursive(consequent, null, visitor);
         branchTarget[bid1] = Range.fromNode(code, alternate);
         branchTarget[bid2] = Range.fromNode(code, consequent);
         const countExpr1 = createExpr(`__cov__.branch.add(${bid1});`)
         const countExpr2 = createExpr(`__cov__.branch.add(${bid2});`)
-        const newAlternate = createSeqExpr([countExpr1, alternate])
-        const newConsequent = createSeqExpr([countExpr2, consequent])
+        const newAlternate = createSeqExpr([countExpr2, alternate])
+        const newConsequent = createSeqExpr([countExpr1, consequent])
         expr.alternate = newAlternate
         expr.consequent = newConsequent
       }, 
-      LogicalExpression(node) { 
+      LogicalExpression(node) { // branch 
         const { type, operator, left, right } = node;
-        walk.recursive(left, null, visitor);
-        walk.recursive(right, null, visitor);
-        const bid1 = bcount++;
-        const bid2 = bcount++;
-        branchTarget[bid1] = Range.fromNode(code, left);
-        branchTarget[bid2] = Range.fromNode(code, right);
-        const countExpr1 = createExpr(`__cov__.branch.add(${bid1});`)
-        const countExpr2 = createExpr(`__cov__.branch.add(${bid2});`)
-        const newLeft = createSeqExpr([countExpr1, left])
-        const newRight = createSeqExpr([countExpr2, right])
-        node.left = newLeft
-        node.right = newRight
+        if (left.type == 'LogicalExpression') {
+          walk.recursive(left, null, visitor);
+        } else {
+          const bid1 = bcount++;
+          branchTarget[bid1] = Range.fromNode(code, left);
+          const countExpr1 = createExpr(`__cov__.branch.add(${bid1});`)
+          const newLeft = createSeqExpr([countExpr1, left])
+          node.left = newLeft
+        }
+        if (right.type == 'LogicalExpression') {
+          walk.recursive(right, null, visitor);
+        } else {
+          const bid2 = bcount++;
+          branchTarget[bid2] = Range.fromNode(code, right);
+          const countExpr2 = createExpr(`__cov__.branch.add(${bid2});`)
+          const newRight = createSeqExpr([countExpr2, right])
+          node.right = newRight
+        }
       }, 
       LabeledStatement(node) { 
         const { label, body } = node; 
