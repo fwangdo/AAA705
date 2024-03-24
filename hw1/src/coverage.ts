@@ -129,7 +129,8 @@ export class Coverage {
           const sid = scount++;
           stmtTarget[sid] = Range.fromNode(code, body);
           const countExpr = createExpr(`__cov__.stmt.add(${sid});`)
-          const newExpr = createSeqExpr([countExpr, body])
+          const countFunc = createExpr(`__cov__.func.add(${fid});`)
+          const newExpr = createSeqExpr([countFunc, countExpr, body])
           func.body = newExpr
         }
       },
@@ -213,17 +214,17 @@ export class Coverage {
       ConditionalExpression(expr) { // branch . 
         const { type, test, alternate, consequent } = expr;
         const bid1 = bcount++;
-        walk.recursive(alternate, null, visitor);
-        const bid2 = bcount++;
         walk.recursive(consequent, null, visitor);
-        branchTarget[bid1] = Range.fromNode(code, alternate);
-        branchTarget[bid2] = Range.fromNode(code, consequent);
+        const bid2 = bcount++;
+        walk.recursive(alternate, null, visitor);
+        branchTarget[bid1] = Range.fromNode(code, consequent);
+        branchTarget[bid2] = Range.fromNode(code, alternate);
         const countExpr1 = createExpr(`__cov__.branch.add(${bid1});`)
         const countExpr2 = createExpr(`__cov__.branch.add(${bid2});`)
-        const newAlternate = createSeqExpr([countExpr2, alternate])
         const newConsequent = createSeqExpr([countExpr1, consequent])
-        expr.alternate = newAlternate
+        const newAlternate = createSeqExpr([countExpr2, alternate])
         expr.consequent = newConsequent
+        expr.alternate = newAlternate
       }, 
       LogicalExpression(node) { // branch 
         const { type, operator, left, right } = node;
