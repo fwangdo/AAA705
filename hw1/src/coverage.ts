@@ -185,6 +185,9 @@ export class Coverage {
       IfStatement(stmt) { // branch 
         const { type, test, consequent, alternate } = stmt;
 
+        // test. 
+        walk.recursive(test, null, visitor)
+
         // if case.
         const blockConsequent = toBlockStmt(consequent)
         stmt.consequent = blockConsequent
