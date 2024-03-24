@@ -117,16 +117,18 @@ export class Coverage {
         const fid = fcount++;
         funcTarget[fid] = Range.fromNode(code, func);
         const countStmt = createStmt(`__cov__.func.add(${fid});`)
+
         if (body.type === 'BlockStatement') {
           const blockStmt = body as BlockStatement;
           const stmts = blockStmt.body;
           blockStmt.body = walkStmts(stmts);
           blockStmt.body.unshift(countStmt);
         } else { // Expression. 
-          const stmt = createReturnStmt(body);
-          const newBlock = toBlockStmt(stmt);
-          newBlock.body = walkStmts(newBlock.body);
-          newBlock.body.unshift(countStmt);
+          const sid = scount++;
+          stmtTarget[sid] = Range.fromNode(code, body);
+          const countExpr = createExpr(`__cov__.stmt.add(${sid});`)
+          const newExpr = createSeqExpr([countExpr, body])
+          func.body = newExpr
         }
       },
       VariableDeclaration(decl) { // stmt 
@@ -135,7 +137,7 @@ export class Coverage {
         const sid = scount++;
         stmtTarget[sid] = Range.fromNode(code, decl);
         const countExpr = createExpr(`__cov__.stmt.add(${sid});`)
-
+        
         // main
         const temp = declarations.shift() as VariableDeclarator;
         const { type:t2, id, init } = temp;
@@ -169,9 +171,9 @@ export class Coverage {
           branchTarget[bid] = Range.fromNode(code, c);
           
           const { type:t2, test, consequent  } = c;
-          const countStmt = createStmt(`__cov__.branch.add(${bid});`)
-          for (const cons of consequent) { walk.recursive(cons, null, visitor) }
-          consequent.unshift(countStmt)
+          const countStmt = createStmt(`__cov__.branch.add(${bid});`);
+          c.consequent = walkStmts(consequent);
+          c.consequent.unshift(countStmt);
         }
       },
       StaticBlock(node) { 
