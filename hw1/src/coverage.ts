@@ -38,6 +38,7 @@ import { count } from 'console';
 //additional. 
 import {
   VariableDeclarator
+  , ExpressionStatement
 } from 'acorn';
 import { allowedNodeEnvironmentFlags } from 'process';
 
@@ -117,22 +118,28 @@ export class Coverage {
         for (const param of params) { walk.recursive(param, null, visitor); }
         const fid = fcount++;
         funcTarget[fid] = Range.fromNode(code, func);
-        const countStmt = createStmt(`__cov__.func.add(${fid});`)
+        const countFunc = createStmt(`__cov__.func.add(${fid});`)
 
         if (body.type === 'BlockStatement') {
           const blockStmt = body as BlockStatement;
           const stmts = blockStmt.body;
           blockStmt.body = walkStmts(stmts);
-          blockStmt.body.unshift(countStmt);
+          blockStmt.body.unshift(countFunc);
         } else { // Expression. 
-          walk.recursive(body, null, visitor)
           const sid = scount++;
           stmtTarget[sid] = Range.fromNode(code, body);
-          const countExpr = createExpr(`__cov__.stmt.add(${sid});`)
           const countFunc = createExpr(`__cov__.func.add(${fid});`)
-          const newExpr = createSeqExpr([countFunc, countExpr, body])
+          const countStmt = createExpr(`__cov__.stmt.add(${sid});`)
+          walk.recursive(body, null, visitor)
+          // const newExpr = createReturnStmt(body)
+          // const newBlock = toBlockStmt(newExpr)
+          // newBlock.body.unshift(countStmt)
+          // newBlock.body.unshift(countFunc)
+          // func.body = newBlock 
+          const newExpr = createSeqExpr([countFunc, countStmt, body])
           func.body = newExpr
         }
+        // console.log(func.body)
       },
       VariableDeclaration(decl) { // stmt 
         const { type, declarations, kind } = decl;
@@ -143,6 +150,18 @@ export class Coverage {
           
           // main
           const { type:t2, id, init } = curDecl;
+          // if (id.type === 'ArrayPattern') {
+          //   for (const i of id.elements) { 
+          //     // console.log(i)
+          //     if ((i !== null) && (i.type === 'AssignmentPattern')) {
+          //       walk.recursive(i, null, visitor) 
+          //     }
+          //   }
+          // } else {
+          //   walk.recursive(id, null, visitor)
+          // }
+          walk.recursive(id, null, visitor)
+
           if (init) {
             walk.recursive(init, null, visitor)
             const newDecl = createSeqExpr([countExpr, init])
@@ -155,13 +174,19 @@ export class Coverage {
       },
       AssignmentPattern(pattern) { // stmt
         const { type, left, right } = pattern;
+        // const sid = scount++;
+        // stmtTarget[sid] = Range.fromNode(code, pattern);
+        // const countExpr = createExpr(`__cov__.stmt.add(${sid});`)
+        // const newDecl = createSeqExpr([countExpr, right])
+        // pattern.right = newDecl
+        // console.log(right)
+        walk.recursive(left, null, visitor)
         const sid = scount++;
-        stmtTarget[sid] = Range.fromNode(code, pattern);
-        const countExpr = createExpr(`__cov__.stmt.add(${sid});`)
-
-        // main
-        const newDecl = createSeqExpr([countExpr, right])
-        pattern.right = newDecl
+        stmtTarget[sid] = Range.fromNode(code, right);
+        const countStmt = createExpr(`__cov__.stmt.add(${sid});`)
+        walk.recursive(right, null, visitor)
+        const newExpr = createSeqExpr([countStmt, right])
+        pattern.right = newExpr 
       },
       BlockStatement(node) {
         node.body = walkStmts(node.body);
@@ -216,6 +241,7 @@ export class Coverage {
       }, 
       ConditionalExpression(expr) { // branch . 
         const { type, test, alternate, consequent } = expr;
+        walk.recursive(test, null, visitor)
         const bid1 = bcount++;
         walk.recursive(consequent, null, visitor);
         const bid2 = bcount++;
@@ -252,41 +278,97 @@ export class Coverage {
       }, 
       LabeledStatement(node) { 
         const { label, body } = node; 
-        walk.recursive(body, null, visitor)
+        const sid = scount++ 
+        const countStmt = createStmt(`__cov__.stmt.add(${sid});`);
+        stmtTarget[sid] = Range.fromNode(code, body);
+        walk.recursive(body, null, visitor);
+        const newBody = prependStmt(countStmt, body);
+        node.body = newBody; 
       },
       WhileStatement(node) { 
         const { test, body } = node;
-        walk.recursive(body, null, visitor)
+        walk.recursive(test, null, visitor)
+        
+        const newBody = toBlockStmt(body)
+        node.body = newBody
+        walk.recursive(newBody, null, visitor)
+
+        // const sid = scount++ 
+        // stmtTarget[sid] = Range.fromNode(code, body)
+        // const countStmt = createStmt(`__cov__.stmt.add(${sid});`);
+        // const newStmt = toBlockStmt(body)
+        // newStmt.body.unshift(countStmt)
+        // node.body =newStmt
       },
       DoWhileStatement(node) { 
         const { body, test } = node;
-        walk.recursive(body, null, visitor)
+
+        const newBody = toBlockStmt(body)
+        node.body = newBody
+        walk.recursive(newBody, null, visitor)
         walk.recursive(test, null, visitor)
+
+        // const sid = scount++ 
+        // stmtTarget[sid] = Range.fromNode(code, body)
+        // const countStmt = createStmt(`__cov__.stmt.add(${sid});`);
+        // const newStmt = toBlockStmt(body)
+        // newStmt.body.unshift(countStmt)
+        // node.body =newStmt
       },
       ForStatement(node) { 
         const { type, init, test, update, body } = node;
-        if (!(!init)) {
+        const newBody = toBlockStmt(body)
+        node.body = newBody
+
+        if (init) {
           walk.recursive(init, null, visitor)
         }
-        if (!(!test)) {
+        if (test) {
           walk.recursive(test, null, visitor)
         }
-        if (!(!update)) {
+        if (update) {
           walk.recursive(update, null, visitor)
         }
-        walk.recursive(body, null, visitor)
+        walk.recursive(newBody, null, visitor)
+
+        // const sid = scount++ 
+        // stmtTarget[sid] = Range.fromNode(code, body)
+        // const countStmt = createStmt(`__cov__.stmt.add(${sid});`);
+        // const newStmt = toBlockStmt(body)
+        // newStmt.body.unshift(countStmt)
+        // node.body =newStmt
       },
       ForInStatement(node) { 
         const { type, left, right, body } = node;
-        walk.recursive(left, null, visitor)
-        walk.recursive(right, null, visitor)
-        walk.recursive(body, null, visitor)
+        const newBody = toBlockStmt(body)
+        node.body = newBody
+
+        // walk.recursive(left, null, visitor)
+        // walk.recursive(right, null, visitor)
+        walk.recursive(newBody, null, visitor)
+
+        // const sid = scount++ 
+        // stmtTarget[sid] = Range.fromNode(code, body)
+        // const countStmt = createStmt(`__cov__.stmt.add(${sid});`);
+        // const newStmt = toBlockStmt(body)
+        // newStmt.body.unshift(countStmt)
+        // node.body =newStmt
       },
       ForOfStatement(node) { 
         const { type, left, right, body, await } = node;
-        walk.recursive(left, null, visitor)
-        walk.recursive(right, null, visitor)
-        walk.recursive(body, null, visitor)
+        const newBody = toBlockStmt(body)
+        node.body = newBody
+
+        // walk.recursive(left, null, visitor)
+        // walk.recursive(right, null, visitor)
+        walk.recursive(newBody, null, visitor)
+
+        // const sid = scount++ 
+        // stmtTarget[sid] = Range.fromNode(code, body)
+        // const countStmt = createStmt(`__cov__.stmt.add(${sid});`);
+        // const newStmt = toBlockStmt(body)
+        // newStmt.body.unshift(countStmt)
+        // node.body =newStmt
       },
     }
 
@@ -294,6 +376,7 @@ export class Coverage {
     function walkStmts(stmts: Statement[]): Statement[] {
       let newStmts = [];
       for (const stmt of stmts) {
+        // console.log(stmt)
         if (!stmt.type.endsWith('Declaration')) {
           const sid = scount++;
           stmtTarget[sid] = Range.fromNode(code, stmt);

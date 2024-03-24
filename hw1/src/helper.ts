@@ -164,6 +164,11 @@ export function createReturnStmt(argument: Expression): ReturnStatement {
   return { type: 'ReturnStatement', argument, start, end };
 }
 
+// export function createExprStmt(argument: Expression): ExpressionStatement {
+//   let { start, end } = argument;
+//   return { type: 'ExpressionStatement', expression:argument, start, end};
+// }
+
 // Create a new statement node
 export function createStmt(code: string): Statement {
   return parse(code).body[0] as Statement;
