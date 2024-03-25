@@ -144,42 +144,26 @@ export class Coverage {
       VariableDeclaration(decl) { // stmt 
         const { type, declarations, kind } = decl;
         for (const curDecl of declarations) { 
-          const sid = scount++;
-          stmtTarget[sid] = Range.fromNode(code, curDecl);
-          const countExpr = createExpr(`__cov__.stmt.add(${sid});`)
           
           // main
           const { type:t2, id, init } = curDecl;
-          // if (id.type === 'ArrayPattern') {
-          //   for (const i of id.elements) { 
-          //     // console.log(i)
-          //     if ((i !== null) && (i.type === 'AssignmentPattern')) {
-          //       walk.recursive(i, null, visitor) 
-          //     }
-          //   }
-          // } else {
-          //   walk.recursive(id, null, visitor)
-          // }
           walk.recursive(id, null, visitor)
-
+          
           if (init) {
+            const sid = scount++;
+            stmtTarget[sid] = Range.fromNode(code, curDecl);
+            const countExpr = createExpr(`__cov__.stmt.add(${sid});`)
             walk.recursive(init, null, visitor)
             const newDecl = createSeqExpr([countExpr, init])
             curDecl.init = newDecl
           } else {
-            const newDecl = countExpr
-            curDecl.init = newDecl
+            // const newDecl = countExpr
+            // curDecl.init = newDecl
           }
         }
       },
       AssignmentPattern(pattern) { // stmt
         const { type, left, right } = pattern;
-        // const sid = scount++;
-        // stmtTarget[sid] = Range.fromNode(code, pattern);
-        // const countExpr = createExpr(`__cov__.stmt.add(${sid});`)
-        // const newDecl = createSeqExpr([countExpr, right])
-        // pattern.right = newDecl
-        // console.log(right)
         walk.recursive(left, null, visitor)
         const sid = scount++;
         stmtTarget[sid] = Range.fromNode(code, right);
@@ -428,10 +412,11 @@ export class Coverage {
     const { code, func: f, stmt: s, branch: b } = this;
     let str: string = '';
     if (showModified) str += `Modified: ${this.modified}\n`;
-    str += `Coverage:` + '\n';
-    if (f.total > 0) str += `- func: ${f.toString(showDetail)}\n`;
-    if (s.total > 0) str += `- stmt: ${s.toString(showDetail)}\n`;
-    if (b.total > 0) str += `- branch: ${b.toString(showDetail)}\n`;
-    return str.trim();
+    // str += `Coverage:` + '\n';
+    // if (f.total > 0) str += `- func: ${f.toString(showDetail)}\n`;
+    // if (s.total > 0) str += `- stmt: ${s.toString(showDetail)}\n`;
+    // if (b.total > 0) str += `- branch: ${b.toString(showDetail)}\n`;
+    // return str.trim();
+    return str.trim().substring(20000, 40000);
   }
 }
