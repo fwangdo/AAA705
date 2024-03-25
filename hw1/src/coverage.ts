@@ -39,6 +39,7 @@ import { count } from 'console';
 import {
   VariableDeclarator
   , ExpressionStatement
+  , UnaryExpression
 } from 'acorn';
 import { allowedNodeEnvironmentFlags } from 'process';
 
@@ -177,6 +178,8 @@ export class Coverage {
       },
       SwitchStatement(stmt) { // branch 
         const { type, discriminant, cases } = stmt;
+
+        walk.recursive(discriminant, null, visitor)
         
         for (const c of cases) { 
           const bid = bcount++;
@@ -193,16 +196,16 @@ export class Coverage {
       }, 
       IfStatement(stmt) { // branch 
         const { type, test, consequent, alternate } = stmt;
-
+        
         // test. 
         walk.recursive(test, null, visitor)
+        const bid1 = bcount++;
+        branchTarget[bid1] = Range.fromNode(code, consequent);
 
         // if case.
         const blockConsequent = toBlockStmt(consequent)
         stmt.consequent = blockConsequent
         walk.recursive(blockConsequent, null, visitor) 
-        const bid1 = bcount++;
-        branchTarget[bid1] = Range.fromNode(code, consequent);
         const countStmt = createStmt(`__cov__.branch.add(${bid1});`)
         const genConsequent = prependStmt(countStmt, blockConsequent)
         stmt.consequent = genConsequent
@@ -243,6 +246,15 @@ export class Coverage {
         const { type, operator, left, right } = node;
         if (left.type == 'LogicalExpression') {
           walk.recursive(left, null, visitor);
+        } else if (left.type == 'UnaryExpression' && left.operator == '!') {
+          const bid1 = bcount++;
+          branchTarget[bid1] = Range.fromNode(code, left);
+          const countExpr1 = createExpr(`__cov__.branch.add(${bid1});`)
+
+          walk.recursive(left.argument, null, visitor);
+
+          const newLeft = createSeqExpr([countExpr1, left])
+          node.left = newLeft
         } else {
           const bid1 = bcount++;
           branchTarget[bid1] = Range.fromNode(code, left);
@@ -250,11 +262,22 @@ export class Coverage {
           const newLeft = createSeqExpr([countExpr1, left])
           node.left = newLeft
         }
+
         if (right.type == 'LogicalExpression') {
           walk.recursive(right, null, visitor);
+        } else if (right.type == 'UnaryExpression' && right.operator == '!') {
+          const bid2 = bcount++;
+          branchTarget[bid2] = Range.fromNode(code, right);
+          const countExpr2 = createExpr(`__cov__.branch.add(${bid2});`)
+
+          walk.recursive(right.argument, null, visitor);
+
+          const newRight = createSeqExpr([countExpr2, right])
+          node.right = newRight
         } else {
           const bid2 = bcount++;
           branchTarget[bid2] = Range.fromNode(code, right);
+          walk.recursive(right, null, visitor);
           const countExpr2 = createExpr(`__cov__.branch.add(${bid2});`)
           const newRight = createSeqExpr([countExpr2, right])
           node.right = newRight
@@ -412,11 +435,11 @@ export class Coverage {
     const { code, func: f, stmt: s, branch: b } = this;
     let str: string = '';
     if (showModified) str += `Modified: ${this.modified}\n`;
-    // str += `Coverage:` + '\n';
-    // if (f.total > 0) str += `- func: ${f.toString(showDetail)}\n`;
-    // if (s.total > 0) str += `- stmt: ${s.toString(showDetail)}\n`;
-    // if (b.total > 0) str += `- branch: ${b.toString(showDetail)}\n`;
-    // return str.trim();
-    return str.trim().substring(20000, 40000);
+
+    str += `Coverage:` + '\n';
+    if (f.total > 0) str += `- func: ${f.toString(showDetail)}\n`;
+    if (s.total > 0) str += `- stmt: ${s.toString(showDetail)}\n`;
+    if (b.total > 0) str += `- branch: ${b.toString(showDetail)}\n`;
+    return str.trim();
   }
 }
