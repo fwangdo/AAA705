@@ -34,6 +34,8 @@ import walk from 'acorn-walk';
 
 import { generate } from 'astring';
 import { isInt8Array } from 'util/types';
+import exp from 'constants';
+import { boolean } from 'yargs';
 
 /* Mutator
  *
@@ -207,17 +209,72 @@ export class Mutator {
       walk.recursive(left, null, visitor);
       walk.recursive(right, null, visitor);
     },
-    BlockStatement: (node) => { todo() },
-    ChainExpression: (node) => { todo() },
-    ConditionalExpression: (node) => { todo() },
-    DoWhileStatement: (node) => { todo() },
-    ForStatement: (node) => { todo() },
-    IfStatement: (node) => { todo() },
-    Literal: (node) => { todo() },
-    LogicalExpression: (node) => { todo() },
-    NewExpression: (node) => { todo() },
-    ObjectExpression: (node) => { todo() },
-    TemplateLiteral: (node) => { todo() },
+    BlockStatement: (node) => { 
+      const { visitor, addMutant } = this;
+      const { body } = node
+      if (body.length !== 0) {
+        node.body = [];
+        addMutant(MutantType.BlockStmt, node);
+        node.body = body
+      }
+      for (const elem of body) { walk.recursive(elem, null, visitor) }
+    },
+    ChainExpression: (node) => { 
+      const { visitor, addMutant } = this;
+      const { expression } = node;
+      walk.recursive(expression, null, visitor)
+    },
+    ConditionalExpression: (node) => { 
+      const { visitor, addMutant } = this;
+      const { test, alternate, consequent } = node;
+      walk.recursive(test, null, visitor) // Changing should be ensured!
+      walk.recursive(alternate, null, visitor)
+      walk.recursive(consequent, null, visitor)
+    },
+    DoWhileStatement: (node) => { 
+      const { visitor, addMutant } = this;
+      todo() 
+    },
+    ForStatement: (node) => { 
+      const { visitor, addMutant } = this;
+      todo() 
+    },
+    IfStatement: (node) => { 
+      const { visitor, addMutant } = this;
+      todo() 
+    },
+    Literal: (node) => { 
+      const { visitor, addMutant } = this;
+      const { value } = node;
+      if (typeof value === 'boolean') {
+        if (value === true) {
+          node.value = false;
+          addMutant(MutantType.BooleanLiteral, node);
+          node.value = value;
+        } else {
+          node.value = true;
+          addMutant(MutantType.BooleanLiteral, node);
+          node.value = value;
+        } 
+      }
+      // add string case
+    },
+    LogicalExpression: (node) => { 
+      const { visitor, addMutant } = this;
+      todo() 
+    },
+    NewExpression: (node) => { 
+      const { visitor, addMutant } = this;
+      todo() 
+    },
+    ObjectExpression: (node) => { 
+      const { visitor, addMutant } = this;
+      todo() 
+    },
+    TemplateLiteral: (node) => { 
+      const { visitor, addMutant } = this;
+      todo() 
+    },
     UnaryExpression: (node) => {
       const { visitor, addMutant } = this;
       const { argument, operator } = node;
