@@ -443,3 +443,8 @@ export class Coverage {
     return str.trim();
   }
 }
+
+
+// function fromNodeToLast(code: string, node: Node): Range {
+//   return Range.fromCode(code, node.end, node.end);
+// }
