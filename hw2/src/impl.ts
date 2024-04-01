@@ -33,6 +33,7 @@ import {
 import walk from 'acorn-walk';
 
 import { generate } from 'astring';
+import { isInt8Array } from 'util/types';
 
 /* Mutator
  *
@@ -96,9 +97,116 @@ export class Mutator {
 
   // Visitor for generating mutants
   visitor: walk.RecursiveVisitors<any> = {
-    ArrayExpression: (node) => { todo() },
-    AssignmentExpression: (node) => { todo() },
-    BinaryExpression: (node) => { todo() },
+    ArrayExpression: (node) => { // TODO  
+      const { visitor, addMutant } = this;
+      const { elements } = node; 
+      if (elements[0] !== null) {
+        node.elements[0] = null;
+        addMutant(MutantType.Arithmetic, node);
+        node.elements = elements
+      }
+      for (const elem of elements) {
+        if (elem !== null) walk.recursive(elem, null, visitor)
+      }
+    },
+    AssignmentExpression: (node) => { 
+      const { visitor, addMutant } = this;
+      const { operator, left, right } = node; 
+      switch (operator) {
+        case '+=':
+          node.operator = '-=';
+          addMutant(MutantType.AssignExpr, node);
+          node.operator = operator;
+          break;
+        case '-=':
+          node.operator = '+=';
+          addMutant(MutantType.AssignExpr, node);
+          node.operator = operator;
+          break;
+        case '*=':
+          node.operator = '/=';
+          addMutant(MutantType.AssignExpr, node);
+          node.operator = operator;
+          break;
+        case '/=':
+          node.operator = '*=';
+          addMutant(MutantType.AssignExpr, node);
+          node.operator = operator;
+          break;
+        case '%=':
+          node.operator = '*=';
+          addMutant(MutantType.AssignExpr, node);
+          node.operator = operator;
+          break;
+        case '<<=':
+          node.operator = '>>=';
+          addMutant(MutantType.AssignExpr, node);
+          node.operator = operator;
+          break;
+        case '>>=':
+          node.operator = '<<=';
+          addMutant(MutantType.AssignExpr, node);
+          node.operator = operator;
+          break;
+        case '&=':
+          node.operator = '|=';
+          addMutant(MutantType.AssignExpr, node);
+          node.operator = operator;
+          break;
+        case '|=':
+          node.operator = '&=';
+          addMutant(MutantType.AssignExpr, node);
+          node.operator = operator;
+          break;
+        case '??=':
+          node.operator = '&&=';
+          addMutant(MutantType.AssignExpr, node);
+          node.operator = operator;
+          break;
+      }
+
+      walk.recursive(left, null, visitor);
+      walk.recursive(right, null, visitor);
+    }, 
+    BinaryExpression: (node) => { 
+      const { visitor, addMutant } = this;
+      const { operator, left, right } = node; 
+      switch (operator) {
+        case '+':
+          node.operator = '-';
+          addMutant(MutantType.Arithmetic, node);
+          node.operator = operator;
+          break;
+        case '-':
+          node.operator = '+';
+          addMutant(MutantType.Arithmetic, node);
+          node.operator = operator;
+          break;
+        case '*':
+          node.operator = '/';
+          addMutant(MutantType.Arithmetic, node);
+          node.operator = '%';
+          addMutant(MutantType.Arithmetic, node);
+          node.operator = operator;
+          break;
+        case '/':
+          node.operator = '*';
+          addMutant(MutantType.Arithmetic, node);
+          node.operator = '%';
+          addMutant(MutantType.Arithmetic, node);
+          node.operator = operator;
+          break;
+        case '%':
+          node.operator = '*';
+          addMutant(MutantType.Arithmetic, node);
+          node.operator = '/';
+          addMutant(MutantType.Arithmetic, node);
+          node.operator = operator;
+          break;
+      }
+      walk.recursive(left, null, visitor);
+      walk.recursive(right, null, visitor);
+    },
     BlockStatement: (node) => { todo() },
     ChainExpression: (node) => { todo() },
     ConditionalExpression: (node) => { todo() },
