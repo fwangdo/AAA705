@@ -16,7 +16,7 @@ import {
 
 import { green } from 'chalk';
 
-import acorn from 'acorn';
+import acorn, { ExpressionStatement } from 'acorn';
 import {
   AssignmentOperator,
   BinaryExpression,
@@ -28,6 +28,7 @@ import {
   LogicalExpression,
   LogicalOperator,
   Node,
+  Literal,  
 } from 'acorn';
 
 import walk from 'acorn-walk';
@@ -36,6 +37,46 @@ import { generate } from 'astring';
 import { isInt8Array } from 'util/types';
 import exp from 'constants';
 import { boolean } from 'yargs';
+
+/*
+  helper function 
+ */
+export function checkIsFalse(node: Expression): boolean {
+  if (node.type !== "Literal") return false 
+  const { value } = node; 
+  if (value === false) return true 
+  return false
+} 
+
+
+export function checkIsTrue(node: Expression): boolean {
+  if (node.type !== "Literal") return false 
+  const { value } = node; 
+  if (value === true) return true 
+  return false
+} 
+
+
+// change value for literal 
+export function putFalse(node: Expression): Expression {
+  if (node.type !== "Literal") throw new Error; 
+  node.value = false 
+  return node 
+}
+
+
+export function putTrue(node: Expression): Expression {
+  if (node.type !== "Literal") throw new Error; 
+  node.value = true  
+  return node 
+}
+
+// export function getBackValue(node: Expression, value: string | boolean | null | number | RegExp | bigint): Expression {
+//   if (node.type !== "Literal") throw new Error; 
+//   node.value = value 
+//   return node 
+// }
+
 
 /* Mutator
  *
@@ -166,7 +207,6 @@ export class Mutator {
           node.operator = operator;
           break;
       }
-
       walk.recursive(left, null, visitor);
       walk.recursive(right, null, visitor);
     }, 
@@ -227,21 +267,57 @@ export class Mutator {
     ConditionalExpression: (node) => { 
       const { visitor, addMutant } = this;
       const { test, alternate, consequent } = node;
-      walk.recursive(test, null, visitor) // Changing should be ensured!
+      if (!checkIsFalse(test)) {
+        node.test = putFalse(test)
+        addMutant(MutantType.Cond, node);
+        node.test = test 
+      }
+      if (!checkIsTrue(test)) {
+        node.test = putTrue(test)
+        addMutant(MutantType.Cond, node);
+        node.test = test 
+      }
       walk.recursive(alternate, null, visitor)
       walk.recursive(consequent, null, visitor)
     },
     DoWhileStatement: (node) => { 
       const { visitor, addMutant } = this;
-      todo() 
+      const { body, test } = node; 
+      if (!checkIsFalse(test)) {
+        node.test = putFalse(test)
+        addMutant(MutantType.Cond, node);
+        node.test = test 
+      }
+      walk.recursive(body, null, visitor)
     },
     ForStatement: (node) => { 
       const { visitor, addMutant } = this;
-      todo() 
+      const { test, body } = node;
+      if (test) {
+        if (!checkIsFalse(test)) {
+          node.test = putFalse(test)
+          addMutant(MutantType.Cond, node);
+          node.test = test 
+        }
+      } 
+      walk.recursive(body, null, visitor)
     },
     IfStatement: (node) => { 
       const { visitor, addMutant } = this;
-      todo() 
+      const { test, consequent, alternate } = node;
+      if (!checkIsFalse(test)) {
+        node.test = putFalse(test)
+        addMutant(MutantType.Cond, node);
+        node.test = test 
+      }
+      if (!checkIsTrue(test)) {
+        node.test = putTrue(test)
+        addMutant(MutantType.Cond, node);
+        node.test = test 
+      }
+      // walk.recursive(test, null, visitor)
+      walk.recursive(consequent, null, visitor); 
+      if (alternate) walk.recursive(alternate, null, visitor);
     },
     Literal: (node) => { 
       const { visitor, addMutant } = this;
@@ -261,7 +337,7 @@ export class Mutator {
     },
     LogicalExpression: (node) => { 
       const { visitor, addMutant } = this;
-      todo() 
+      const { operator, left, right } = node; 
     },
     NewExpression: (node) => { 
       const { visitor, addMutant } = this;
@@ -292,8 +368,20 @@ export class Mutator {
       }
       walk.recursive(argument, null, visitor);
     },
-    UpdateExpression: (node) => { todo() },
-    WhileStatement: (node) => { todo() },
+    UpdateExpression: (node) => { 
+      const { visitor, addMutant } = this;
+      todo() 
+    },
+    WhileStatement: (node) => { 
+      const { visitor, addMutant } = this;
+      const { test, body } = node; 
+      if (!checkIsFalse(test)) {
+        node.test = putFalse(test)
+        addMutant(MutantType.Cond, node);
+        node.test = test 
+      }
+      walk.recursive(body, null, visitor)
+    },
     // XXX: for assertion
     // DO not modify the code inside the function
     CallExpression: (node) => {
