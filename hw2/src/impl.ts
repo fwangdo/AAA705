@@ -58,17 +58,19 @@ export function checkIsTrue(node: Expression): boolean {
 
 
 // change value for literal 
-export function putFalse(node: Expression): Expression {
-  if (node.type !== "Literal") throw new Error; 
-  node.value = false 
-  return node 
+export function putFalse(node: Expression): Literal {
+  // if (node.type !== "Literal") throw new Error; 
+  // return {type: 'Literal', value: false, start: node.start, end: node.end }
+  return createBoolLiteral(false) 
 }
 
 
 export function putTrue(node: Expression): Expression {
-  if (node.type !== "Literal") throw new Error; 
-  node.value = true  
-  return node 
+  // return {type: 'Literal', value: true, start: node.start, end: node.end }
+  return createBoolLiteral(true) 
+  // if (node.type !== "Literal") throw new Error; 
+  // node.value = true  
+  // return node 
 }
 
 // export function getBackValue(node: Expression, value: string | boolean | null | number | RegExp | bigint): Expression {
@@ -143,9 +145,9 @@ export class Mutator {
     ArrayExpression: (node) => { // TODO  
       const { visitor, addMutant } = this;
       const { elements } = node; 
-      if (elements[0] !== null) {
-        node.elements[0] = null;
-        addMutant(MutantType.Arithmetic, node);
+      if (elements.length > 0) {
+        node.elements = []
+        addMutant(MutantType.ArrayDecl, node);
         node.elements = elements
       }
       for (const elem of elements) {
@@ -307,14 +309,19 @@ export class Mutator {
       walk.recursive(right, null, visitor);
     },
     BlockStatement: (node) => { 
+      // console.log(node)
       const { visitor, addMutant } = this;
       const { body } = node
-      if (body.length !== 0) {
+      if (body.length > 0) {
         node.body = [];
         addMutant(MutantType.BlockStmt, node);
         node.body = body
       }
-      for (const elem of body) { walk.recursive(elem, null, visitor) }
+      
+      for (const elem of body) { 
+        // console.log(elem)
+        walk.recursive(elem, null, visitor) 
+      }
     },
     ChainExpression: (node) => { 
       const { visitor, addMutant } = this;
@@ -362,17 +369,18 @@ export class Mutator {
     IfStatement: (node) => { 
       const { visitor, addMutant } = this;
       const { test, consequent, alternate } = node;
-      if (!checkIsFalse(test)) {
-        node.test = putFalse(test)
-        addMutant(MutantType.Cond, node);
-        node.test = test 
-      }
+      // console.log(test) 
       if (!checkIsTrue(test)) {
         node.test = putTrue(test)
         addMutant(MutantType.Cond, node);
         node.test = test 
       }
-      // walk.recursive(test, null, visitor)
+      if (!checkIsFalse(test)) {
+        node.test = putFalse(test)
+        addMutant(MutantType.Cond, node);
+        node.test = test 
+      } 
+      walk.recursive(test, null, visitor)
       walk.recursive(consequent, null, visitor); 
       if (alternate) walk.recursive(alternate, null, visitor);
     },
@@ -380,7 +388,7 @@ export class Mutator {
       const { visitor, addMutant } = this;
       const { value } = node;
       if (typeof value === 'boolean') {
-        if (value === true) {
+        if (value) {
           node.value = false;
           addMutant(MutantType.BooleanLiteral, node);
           node.value = value;
@@ -400,7 +408,6 @@ export class Mutator {
           node.value = value;
         }
       }
-      // add string case
     },
     LogicalExpression: (node) => { 
       const { visitor, addMutant } = this;
@@ -434,6 +441,17 @@ export class Mutator {
     NewExpression: (node) => { 
       const { visitor, addMutant } = this;
       const { callee } = node;
+
+      if (node.arguments.length > 0) { 
+        const temp = node.arguments
+        node.arguments = []
+        addMutant(MutantType.ArrayDecl, node);
+        node.arguments = temp 
+      }
+
+      for (const arg of node.arguments) {
+       walk.recursive(arg, null, visitor) 
+      }
       walk.recursive(callee, null, visitor);
     },
     ObjectExpression: (node) => { 
@@ -443,9 +461,9 @@ export class Mutator {
       addMutant(MutantType.ObjectLiteral, node);
       node.properties = properties; 
     
-      // for (const prop in properties) {
-      //   walk.recursive(prop, null, visitor)
-      // }
+      for (const prop of properties) {
+        walk.recursive(prop, null, visitor);
+      }
     },
     TemplateLiteral: (node) => { 
       const { visitor, addMutant } = this;
@@ -480,20 +498,20 @@ export class Mutator {
 
       switch (operator) {
         case '++':
+          node.prefix = !prefix
+          addMutant(MutantType.Update, node);
+          node.prefix = prefix
           node.operator = '--';
           addMutant(MutantType.Update, node);
           node.operator = operator;
+          break;
+        case '--':
           node.prefix = !prefix
           addMutant(MutantType.Update, node);
           node.prefix = prefix
-          break;
-        case '--':
           node.operator = '++';
           addMutant(MutantType.Update, node);
           node.operator = operator;
-          node.prefix = !prefix
-          addMutant(MutantType.Update, node);
-          node.prefix = prefix
           break;
       }
       walk.recursive(argument, null, visitor);
@@ -519,7 +537,19 @@ export class Mutator {
       }
       // Recursively mutate the arguments if it is not the assertion function
       for (const arg of args) walk.recursive(arg, null, visitor);
-    }
+    },
+
+    // added
+    // ExpressionStatement: (node) => {
+    //   const { visitor, addMutant } = this;
+    //   const { expression } = node;
+    //   walk.recursive(expression, null, visitor)
+    // },
+    // FunctionDeclaration: (node) => {
+    //   const { visitor, addMutant } = this;
+    //   const { body } = node;
+    //   walk.recursive(body, null, visitor)
+    // }
   }
 }
 
