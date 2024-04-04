@@ -245,6 +245,63 @@ export class Mutator {
           addMutant(MutantType.Arithmetic, node);
           node.operator = operator;
           break;
+        // comp functions 
+        case '<':
+          node.operator = '<=';
+          addMutant(MutantType.EqualityOp, node);
+          node.operator = '>=';
+          addMutant(MutantType.EqualityOp, node);
+          node.operator = operator;
+          break;
+        case '<=':
+          node.operator = '<';
+          addMutant(MutantType.EqualityOp, node);
+          node.operator = '>';
+          addMutant(MutantType.EqualityOp, node);
+          node.operator = operator;
+          break;
+        case '>':
+          node.operator = '>=';
+          addMutant(MutantType.EqualityOp, node);
+          node.operator = '<=';
+          addMutant(MutantType.EqualityOp, node);
+          node.operator = operator;
+          break;
+        case '>=':
+          node.operator = '>';
+          addMutant(MutantType.EqualityOp, node);
+          node.operator = '<';
+          addMutant(MutantType.EqualityOp, node);
+          node.operator = operator;
+          break;
+        case '==':
+          node.operator = '!=';
+          addMutant(MutantType.EqualityOp, node);
+          node.operator = '===';
+          addMutant(MutantType.EqualityOp, node);
+          node.operator = operator;
+          break;
+        case '!=':
+          node.operator = '==';
+          addMutant(MutantType.EqualityOp, node);
+          node.operator = '!==';
+          addMutant(MutantType.EqualityOp, node);
+          node.operator = operator;
+          break;
+        case '===':
+          node.operator = '!==';
+          addMutant(MutantType.EqualityOp, node);
+          node.operator = '==';
+          addMutant(MutantType.EqualityOp, node);
+          node.operator = operator;
+          break;
+        case '!==':
+          node.operator = '===';
+          addMutant(MutantType.EqualityOp, node);
+          node.operator = '!=';
+          addMutant(MutantType.EqualityOp, node);
+          node.operator = operator;
+          break;
       }
       walk.recursive(left, null, visitor);
       walk.recursive(right, null, visitor);
