@@ -332,24 +332,73 @@ export class Mutator {
           addMutant(MutantType.BooleanLiteral, node);
           node.value = value;
         } 
+      } else if (typeof value === 'string') {
+        if (value == '') {
+          node.value = "__PLRG__";
+          addMutant(MutantType.StringLiteral, node);
+          node.value = value;
+        } else {
+          node.value = '';
+          addMutant(MutantType.StringLiteral, node);
+          node.value = value;
+        }
       }
       // add string case
     },
     LogicalExpression: (node) => { 
       const { visitor, addMutant } = this;
       const { operator, left, right } = node; 
+      switch (operator) {
+        case '&&':
+          node.operator = '||';
+          addMutant(MutantType.LogicalOp, node);
+          node.operator = '??';
+          addMutant(MutantType.LogicalOp, node);
+          node.operator = operator;
+          break;
+        case '||':
+          node.operator = '&&';
+          addMutant(MutantType.LogicalOp, node);
+          node.operator = '??';
+          addMutant(MutantType.LogicalOp, node);
+          node.operator = operator;
+          break;
+        case '??':
+          node.operator = '&&';
+          addMutant(MutantType.LogicalOp, node);
+          node.operator = '||';
+          addMutant(MutantType.LogicalOp, node);
+          node.operator = operator;
+          break;
+      }
+      walk.recursive(left, null, visitor);
+      walk.recursive(right, null, visitor);
     },
     NewExpression: (node) => { 
       const { visitor, addMutant } = this;
-      todo() 
+      const { callee } = node;
+      walk.recursive(callee, null, visitor);
     },
     ObjectExpression: (node) => { 
       const { visitor, addMutant } = this;
-      todo() 
+      const { properties } = node; 
+      node.properties = [];
+      addMutant(MutantType.ObjectLiteral, node);
+      node.properties = properties; 
+    
+      // for (const prop in properties) {
+      //   walk.recursive(prop, null, visitor)
+      // }
     },
     TemplateLiteral: (node) => { 
       const { visitor, addMutant } = this;
-      todo() 
+      const { quasis, expressions } = node;
+
+      // for (const quasi of quasis) {
+      // }
+      for (const expr of expressions) {
+        walk.recursive(expr, null, visitor)
+      }
     },
     UnaryExpression: (node) => {
       const { visitor, addMutant } = this;
@@ -370,7 +419,27 @@ export class Mutator {
     },
     UpdateExpression: (node) => { 
       const { visitor, addMutant } = this;
-      todo() 
+      const { operator, argument, prefix } = node; 
+
+      switch (operator) {
+        case '++':
+          node.operator = '--';
+          addMutant(MutantType.Update, node);
+          node.operator = operator;
+          node.prefix = !prefix
+          addMutant(MutantType.Update, node);
+          node.prefix = prefix
+          break;
+        case '--':
+          node.operator = '++';
+          addMutant(MutantType.Update, node);
+          node.operator = operator;
+          node.prefix = !prefix
+          addMutant(MutantType.Update, node);
+          node.prefix = prefix
+          break;
+      }
+      walk.recursive(argument, null, visitor);
     },
     WhileStatement: (node) => { 
       const { visitor, addMutant } = this;
