@@ -319,7 +319,7 @@ export class Mutator {
       }
       
       for (const elem of body) { 
-        // console.log(elem)
+        if (elem.type === 'VariableDeclaration') console.log(elem.declarations)
         walk.recursive(elem, null, visitor) 
       }
     },
@@ -341,6 +341,7 @@ export class Mutator {
         addMutant(MutantType.Cond, node);
         node.test = test 
       }
+      walk.recursive(test, null, visitor)
       walk.recursive(alternate, null, visitor)
       walk.recursive(consequent, null, visitor)
     },
@@ -386,26 +387,26 @@ export class Mutator {
     },
     Literal: (node) => { 
       const { visitor, addMutant } = this;
-      const { value } = node;
+      const { value, raw } = node;
       if (typeof value === 'boolean') {
-        if (value) {
-          node.value = false;
-          addMutant(MutantType.BooleanLiteral, node);
-          node.value = value;
-        } else {
-          node.value = true;
-          addMutant(MutantType.BooleanLiteral, node);
-          node.value = value;
-        } 
+        node.value = !value
+        node.raw = String(node.value)
+        addMutant(MutantType.BooleanLiteral, node);
+        node.value = value;
+        node.raw = String(node.value)
       } else if (typeof value === 'string') {
         if (value == '') {
           node.value = "__PLRG__";
+          node.raw = "__PLRG__";
           addMutant(MutantType.StringLiteral, node);
           node.value = value;
+          node.raw = raw;
         } else {
           node.value = '';
+          node.raw = '';
           addMutant(MutantType.StringLiteral, node);
           node.value = value;
+          node.raw = raw;
         }
       }
     },
