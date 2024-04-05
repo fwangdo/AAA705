@@ -16,7 +16,7 @@ import {
 
 import { green } from 'chalk';
 
-import acorn, { ExpressionStatement } from 'acorn';
+import acorn, { ExpressionStatement, MemberExpression } from 'acorn';
 import {
   AssignmentOperator,
   BinaryExpression,
@@ -29,6 +29,7 @@ import {
   LogicalOperator,
   Node,
   Literal,  
+  Super,
 } from 'acorn';
 
 import walk from 'acorn-walk';
@@ -37,6 +38,7 @@ import { generate } from 'astring';
 import { isInt8Array } from 'util/types';
 import exp from 'constants';
 import { boolean } from 'yargs';
+import { CallExpression } from 'estree';
 
 /*
   helper function 
@@ -73,11 +75,65 @@ export function putTrue(node: Expression): Expression {
   // return node 
 }
 
-// export function getBackValue(node: Expression, value: string | boolean | null | number | RegExp | bigint): Expression {
-//   if (node.type !== "Literal") throw new Error; 
-//   node.value = value 
-//   return node 
-// }
+
+export function checkOption(node: Expression): boolean {
+  if (node.type === 'CallExpression') {
+    if (node.optional === true) return true 
+    const { callee } = node;
+    if (callee.type !== 'Super') {
+      if (checkIsTarget(callee)) {
+        return checkOption(callee)
+      }
+    }
+  } else if (node.type == 'MemberExpression') {
+    if (node.optional === true) return true 
+    const { object } = node;
+    if (object.type !== 'Super') {
+      if (checkIsTarget(object)) {
+        return checkOption(object)
+      }
+    }
+  }
+  return false  
+}
+
+
+export function checkIsCall(node: Expression): boolean {
+  if (node.type == 'CallExpression') return true;
+  return false;
+}
+
+export function checkIsMember(node: Expression): boolean {
+  if (node.type == 'MemberExpression') return true;
+  return false;
+}
+
+
+export function checkIsTarget(node: Expression): boolean {
+  if (checkIsCall(node)) return true;
+  if (checkIsMember(node)) return true;
+  return false;
+}
+
+
+export function eliminateOption(node: CallExpression | MemberExpression): CallExpression | MemberExpression {
+  if (node.type === 'CallExpression') {
+    node.optional = false;
+    const { callee } = node;
+    if (callee.type === 'MemberExpression' || callee.type == 'CallExpression') {
+      node.callee = eliminateOption(callee);
+    }
+  } else if (node.type == 'MemberExpression') {
+    node.optional = false;
+    const { object } = node;
+    if (object.type !== 'Super') {
+      if (checkIsTarget(object)) {
+        node.object = eliminateOption(object);
+      }
+    }
+  }
+  return node 
+}
 
 
 /* Mutator
@@ -151,7 +207,10 @@ export class Mutator {
         node.elements = elements
       }
       for (const elem of elements) {
-        if (elem !== null) walk.recursive(elem, null, visitor)
+        if (elem !== null) {
+        //  console.log(elem)
+         walk.recursive(elem, null, visitor)
+        }
       }
     },
     AssignmentExpression: (node) => { 
@@ -326,6 +385,9 @@ export class Mutator {
     ChainExpression: (node) => { 
       const { visitor, addMutant } = this;
       const { expression } = node;
+      if (checkOption(expression)) {
+        node.expression = eliminateOption(expression)
+      }
       walk.recursive(expression, null, visitor)
     },
     ConditionalExpression: (node) => { 
@@ -403,7 +465,7 @@ export class Mutator {
           node.raw = raw;
         } else {
           node.value = '';
-          node.raw = '';
+          node.raw = '""';
           addMutant(MutantType.StringLiteral, node);
           node.value = value;
           node.raw = raw;
@@ -470,8 +532,9 @@ export class Mutator {
       const { visitor, addMutant } = this;
       const { quasis, expressions } = node;
 
-      // for (const quasi of quasis) {
-      // }
+      for (const quasi of quasis) {
+        console.log(quasi)
+      }
       for (const expr of expressions) {
         walk.recursive(expr, null, visitor)
       }
@@ -539,7 +602,6 @@ export class Mutator {
       // Recursively mutate the arguments if it is not the assertion function
       for (const arg of args) walk.recursive(arg, null, visitor);
     },
-
     // added
     // ExpressionStatement: (node) => {
     //   const { visitor, addMutant } = this;
