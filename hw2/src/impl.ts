@@ -495,8 +495,8 @@ export class Mutator {
         node.raw = String(node.value)
       } else if (typeof value === 'string') {
         if (value == '') {
-          node.value = "__PLRG__";
-          node.raw = "__PLRG__";
+          node.value = '"__PLRG__"';
+          node.raw = '"__PLRG__"';
           addMutant(MutantType.StringLiteral, node);
           node.value = value;
           node.raw = raw;
@@ -557,9 +557,11 @@ export class Mutator {
     ObjectExpression: (node) => { 
       const { visitor, addMutant } = this;
       const { properties } = node; 
-      node.properties = [];
-      addMutant(MutantType.ObjectLiteral, node);
-      node.properties = properties; 
+      if (node.properties.length > 0) {
+        node.properties = [];
+        addMutant(MutantType.ObjectLiteral, node);
+        node.properties = properties; 
+      } 
     
       for (const prop of properties) {
         walk.recursive(prop, null, visitor);
@@ -569,8 +571,23 @@ export class Mutator {
       const { visitor, addMutant } = this;
       const { quasis, expressions } = node;
 
-      for (const quasi of quasis) {
+      // console.log(quasis)
+      // for (const quasi of quasis) {
+      for (const [idx, quasi] of quasis.entries()) {
         // console.log(quasi)
+        if (quasi.value.raw === '') {
+          const newInst = '__PLRG__';
+          const newQuasi = createTemplateElement(newInst)
+          node.quasis[idx] = newQuasi;
+          addMutant(MutantType.StringLiteral, node);
+          node.quasis[idx] = quasi 
+        } else {
+          const newInst = '';
+          const newQuasi = createTemplateElement(newInst)
+          node.quasis[idx] = newQuasi;
+          addMutant(MutantType.StringLiteral, node);
+          node.quasis[idx] = quasi 
+        }
       }
       for (const expr of expressions) {
         walk.recursive(expr, null, visitor)
