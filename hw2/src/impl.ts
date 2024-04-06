@@ -116,23 +116,49 @@ export function checkIsTarget(node: Expression): boolean {
 }
 
 
-export function eliminateOption(node: CallExpression | MemberExpression): CallExpression | MemberExpression {
-  if (node.type === 'CallExpression') {
+// export function eliminateCallOption(node: CallExpression): CallExpression {
+//  // if ('option' in node) {node.option = false;}
+//   if (node.type === 'CallExpression') {
+//     node.optional = false;
+//     const { callee } = node;
+//     if (callee.type === 'CallExpression') {
+//       node.callee = eliminateCallOption(callee);
+//     } else if (callee.type === "MemberExpression") {
+//       const newCallee = eliminateMemberOption(callee)
+//       node.callee = eliminateMemberOption(callee);
+//     }
+//   }
+//   return node 
+// }
+
+
+// export function eliminateMemberOption(node: MemberExpression): MemberExpression {
+//   if (node.type === 'MemberExpression') {
+//     node.optional = false;
+//     const { object } = node;
+//     if (object.type === 'MemberExpression') {
+//       node.object = eliminateMemberOption(object);
+//     }
+//   }
+//   return node 
+// }
+
+
+export function eliminateOption(node: Expression): Expression {
+  if ('optional' in node) { 
     node.optional = false;
-    const { callee } = node;
-    if (callee.type === 'MemberExpression' || callee.type == 'CallExpression') {
-      node.callee = eliminateOption(callee);
-    }
-  } else if (node.type == 'MemberExpression') {
-    node.optional = false;
-    const { object } = node;
-    if (object.type !== 'Super') {
-      if (checkIsTarget(object)) {
-        node.object = eliminateOption(object);
-      }
+  }
+  if ('callee' in node) {
+    if (node.callee.type !== 'Super') {
+      node.callee = eliminateOption(node.callee);
     }
   }
-  return node 
+  if ('object' in node) {
+    if (node.object.type !== 'Super') {
+      node.object = eliminateOption(node.object);
+    }
+  }
+  return node
 }
 
 
@@ -385,10 +411,16 @@ export class Mutator {
     ChainExpression: (node) => { 
       const { visitor, addMutant } = this;
       const { expression } = node;
-      if (checkOption(expression)) {
-        node.expression = eliminateOption(expression)
+      if (expression.type === 'MemberExpression' || expression.type === "CallExpression") {
+        if (checkOption(expression)) {
+          // const newExpr = eliminateOption(expression)
+          // console.log(newExpr)
+          eliminateOption(expression)
+          addMutant(MutantType.OptionalChain, node)
+          node.expression = expression
+        }
       }
-      walk.recursive(expression, null, visitor)
+      // walk.recursive(expression, null, visitor)
     },
     ConditionalExpression: (node) => { 
       const { visitor, addMutant } = this;
@@ -600,6 +632,7 @@ export class Mutator {
         return;
       }
       // Recursively mutate the arguments if it is not the assertion function
+      walk.recursive(callee, null, visitor);
       for (const arg of args) walk.recursive(arg, null, visitor);
     },
     // added
