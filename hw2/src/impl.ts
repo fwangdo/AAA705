@@ -40,6 +40,9 @@ import exp from 'constants';
 import { boolean } from 'yargs';
 import { CallExpression } from 'estree';
 
+import _ from 'lodash';
+
+
 /*
   helper function 
  */
@@ -404,7 +407,7 @@ export class Mutator {
       }
       
       for (const elem of body) { 
-        if (elem.type === 'VariableDeclaration') console.log(elem.declarations)
+        // if (elem.type === 'VariableDeclaration') console.log(elem.declarations)
         walk.recursive(elem, null, visitor) 
       }
     },
@@ -413,14 +416,14 @@ export class Mutator {
       const { expression } = node;
       if (expression.type === 'MemberExpression' || expression.type === "CallExpression") {
         if (checkOption(expression)) {
-          // const newExpr = eliminateOption(expression)
-          // console.log(newExpr)
-          eliminateOption(expression)
+          const newExpr = _.cloneDeep(expression) 
+          eliminateOption(newExpr)
+          node.expression = newExpr
           addMutant(MutantType.OptionalChain, node)
           node.expression = expression
         }
       }
-      // walk.recursive(expression, null, visitor)
+      walk.recursive(expression, null, visitor)
     },
     ConditionalExpression: (node) => { 
       const { visitor, addMutant } = this;
@@ -448,6 +451,7 @@ export class Mutator {
         node.test = test 
       }
       walk.recursive(body, null, visitor)
+      walk.recursive(test, null, visitor)
     },
     ForStatement: (node) => { 
       const { visitor, addMutant } = this;
@@ -458,6 +462,7 @@ export class Mutator {
           addMutant(MutantType.Cond, node);
           node.test = test 
         }
+        walk.recursive(test, null, visitor)
       } 
       walk.recursive(body, null, visitor)
     },
@@ -565,7 +570,7 @@ export class Mutator {
       const { quasis, expressions } = node;
 
       for (const quasi of quasis) {
-        console.log(quasi)
+        // console.log(quasi)
       }
       for (const expr of expressions) {
         walk.recursive(expr, null, visitor)
@@ -620,6 +625,7 @@ export class Mutator {
         addMutant(MutantType.Cond, node);
         node.test = test 
       }
+      walk.recursive(test, null, visitor)
       walk.recursive(body, null, visitor)
     },
     // XXX: for assertion
