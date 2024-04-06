@@ -16,7 +16,7 @@ import {
 
 import { green } from 'chalk';
 
-import acorn, { ExpressionStatement, MemberExpression } from 'acorn';
+import acorn, { ExpressionStatement, MemberExpression, PrivateIdentifier } from 'acorn';
 import {
   AssignmentOperator,
   BinaryExpression,
@@ -119,32 +119,15 @@ export function checkIsTarget(node: Expression): boolean {
 }
 
 
-// export function eliminateCallOption(node: CallExpression): CallExpression {
-//  // if ('option' in node) {node.option = false;}
-//   if (node.type === 'CallExpression') {
-//     node.optional = false;
-//     const { callee } = node;
-//     if (callee.type === 'CallExpression') {
-//       node.callee = eliminateCallOption(callee);
-//     } else if (callee.type === "MemberExpression") {
-//       const newCallee = eliminateMemberOption(callee)
-//       node.callee = eliminateMemberOption(callee);
-//     }
-//   }
-//   return node 
-// }
-
-
-// export function eliminateMemberOption(node: MemberExpression): MemberExpression {
-//   if (node.type === 'MemberExpression') {
-//     node.optional = false;
-//     const { object } = node;
-//     if (object.type === 'MemberExpression') {
-//       node.object = eliminateMemberOption(object);
-//     }
-//   }
-//   return node 
-// }
+export function checkIsNull(target: Expression | PrivateIdentifier): boolean {
+  if (target.type === 'PrivateIdentifier') return false;
+  if (target.type !== 'Literal') {
+    return false;
+  } else {
+    if (target.value === null) return true;
+  }
+  return false;
+}
 
 
 export function eliminateOption(node: Expression): Expression {
@@ -381,15 +364,20 @@ export class Mutator {
         case '===':
           node.operator = '!==';
           addMutant(MutantType.EqualityOp, node);
-          node.operator = '==';
-          addMutant(MutantType.EqualityOp, node);
+          if (!checkIsNull(node.left) && !checkIsNull(node.right)) {
+            console.log(node.right)
+            node.operator = '==';
+            addMutant(MutantType.EqualityOp, node);
+          }
           node.operator = operator;
           break;
         case '!==':
           node.operator = '===';
           addMutant(MutantType.EqualityOp, node);
-          node.operator = '!=';
-          addMutant(MutantType.EqualityOp, node);
+          if (!checkIsNull(node.left) && !checkIsNull(node.right)) {
+            node.operator = '!=';
+            addMutant(MutantType.EqualityOp, node);
+          }
           node.operator = operator;
           break;
       }

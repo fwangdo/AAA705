@@ -296,6 +296,7 @@ Mutant #198 [cond] [162:7-162:57] `if (obj.anchor) { return obj.distanceFrom(thi
 Mutant #199 [cond] [162:7-162:57] `if (obj.anchor) { return obj.distanceFrom(this); }` -> `if (false) {
   return obj.distanceFrom(this);
 }`
+
 Mutant #200 [block] [162:23-162:57] `{ return obj.distanceFrom(this); }` -> `{}`
 Mutant #201 [logical] [163:15-163:34] `obj.elements || obj` -> `obj.elements && obj`
 Mutant #202 [logical] [163:15-163:34] `obj.elements || obj` -> `obj.elements ?? obj`
