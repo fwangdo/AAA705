@@ -365,7 +365,6 @@ export class Mutator {
           node.operator = '!==';
           addMutant(MutantType.EqualityOp, node);
           if (!checkIsNull(node.left) && !checkIsNull(node.right)) {
-            console.log(node.right)
             node.operator = '==';
             addMutant(MutantType.EqualityOp, node);
           }
