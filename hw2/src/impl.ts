@@ -561,22 +561,21 @@ export class Mutator {
 
       // console.log(quasis)
       // for (const quasi of quasis) {
-      for (const [idx, quasi] of quasis.entries()) {
-        // console.log(quasi)
-        if (quasi.value.raw === '') {
-          const newInst = '__PLRG__';
-          const newQuasi = createTemplateElement(newInst)
-          node.quasis[idx] = newQuasi;
-          addMutant(MutantType.StringLiteral, node);
-          node.quasis[idx] = quasi 
-        } else {
-          const newInst = '';
-          const newQuasi = createTemplateElement(newInst)
-          node.quasis[idx] = newQuasi;
-          addMutant(MutantType.StringLiteral, node);
-          node.quasis[idx] = quasi 
-        }
+      const quasi = quasis[0] 
+      if (quasi.value.raw === '') {
+        const newInst = '__PLRG__';
+        const newQuasi = createTemplateElement(newInst)
+        node.quasis = [newQuasi];
+        addMutant(MutantType.StringLiteral, node);
+        node.quasis = quasis 
+      } else {
+        const newInst = '';
+        const newQuasi = createTemplateElement(newInst)
+        node.quasis = [newQuasi];
+        addMutant(MutantType.StringLiteral, node);
+        node.quasis = quasis 
       }
+   
       for (const expr of expressions) {
         walk.recursive(expr, null, visitor)
       }
