@@ -644,17 +644,6 @@ export class Mutator {
       walk.recursive(callee, null, visitor);
       for (const arg of args) walk.recursive(arg, null, visitor);
     },
-    // added
-    // ExpressionStatement: (node) => {
-    //   const { visitor, addMutant } = this;
-    //   const { expression } = node;
-    //   walk.recursive(expression, null, visitor)
-    // },
-    // FunctionDeclaration: (node) => {
-    //   const { visitor, addMutant } = this;
-    //   const { body } = node;
-    //   walk.recursive(body, null, visitor)
-    // }
   }
 }
 
@@ -665,9 +654,34 @@ export class Mutator {
  * Please construct inputs generating a test suite for the `example/vector.js`
  * JavaScript file that kills all the generated mutants.
  *
- * The current inputs kills only 7 out of 220 mutants.
+ * The current inputs kills only 7 out of 221 mutants.
  */
+
 export const vectorInputs: [string][] = [
-  ["$V([])"],
+  ["$V([1, 2, 3]).e(0)"],
+  ["$V([1, 2, 3]).e(0).max()"],
+  ["$V([]).e(0)"],
+  ["$V([]).e(100)"],
+  ["$V([1, 2, 3]).e(5)"],
+  ["$V([1]).e(1)"],
+  ["$V([1, 2, 3]).dimension()"],
+  ["$V([1, 2, 3]).modulus()"],
+  ["$V([1, 2, 3]).each()"],
+  ["$V([1, 2, 3]).angleFrom($V([1, 2, 3]))"],
   ["$V([1, 2, 3]).dup()"],
+  ["$V([1, 2, 3]).map()"],
+  ["$V([1, 2, 3]).isParallelTo()"],
+  ["$V([1, 2, 3]).isAntiParallelTo()"],
+  ["$V([1, 2, 3]).isPrependicularTo()"],
+  ["$V([1, 2, 3]).add()"],
+  ["$V([1, 2, 3]).subtract()"],
+  ["$V([1, 2, 3]).multiply()"],
+  ["$V([1, 2, 3]).max()"],
+  ["$V([1, 2, 3]).inspection()"],
+  ["$V([1, 2, 3]).setElements()"],
+  ["$V([1, 2, 3]).dot($V([4, 5, 6]))"],
+  ["$V([1, 2, 3]).cross($V([4, 5, 6]))"],
+  ["$V([1, 2, 3]).distanceFrom($V([3, 2, 1]))"],
+  ["$V([1, 2, 3]).eql($V([1, 2, 3]))"],
+  ["$V([1, 2, 3]).indexOf(2)"]
 ]

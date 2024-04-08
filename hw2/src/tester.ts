@@ -78,7 +78,7 @@ export enum MutantType {
 // All mutant types
 export const allMutantTypes = Object.values(MutantType).sort();
 
-// Mutation tester
+// Mutation testerObject
 export class MutationTester {
   code: string;
   runner: (...args: any[]) => any;
