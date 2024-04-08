@@ -24,6 +24,7 @@ function vector(code) {
     eql: function(vector) {
       var n = this.elements.length;
       var V = vector?.elements ?? vector;
+      // console.log(V, vector.elements, vector)
       if (n != V['length']) { return false; }
       do {
         if (Math.abs(this.elements[n-1] != V[n-1])) { return false; }

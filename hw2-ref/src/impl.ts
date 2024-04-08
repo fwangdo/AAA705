@@ -40,8 +40,6 @@ import exp from 'constants';
 import { boolean } from 'yargs';
 import { CallExpression } from 'estree';
 
-// import _ from 'lodash';
-
 
 /*
   helper function 
@@ -662,6 +660,7 @@ export const vectorInputs: [string][] = [
   // ["$V([1, 2, 3]).e(5)"],
   ["vector.Vector.prototype.e.call($V([1, 2, 3], 5)"],
   ["$V([1]).e(1)"],
+  ["$V([1]).e(1).e(1)"],
   ["$V([1, 2, 3]).dimension()"],
   ["$V([1, 2, 3]).modulus()"],
   ["$V([1, 2, 3]).each()"],

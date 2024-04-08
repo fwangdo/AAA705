@@ -126,9 +126,11 @@ export class MutationTester {
           log(`         Test is ${getString(test)} but got ${getString(result)}`);
         }
         return true;
-      }
+      }  
     }
-    if (detail) log(`[ALIVE ] ${mutant}`, red);
+    if (detail) {
+      log(`[ALIVE ] ${mutant}`, red);
+    } 
     return false;
   }
 }
