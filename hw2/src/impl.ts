@@ -658,11 +658,8 @@ export class Mutator {
  */
 
 export const vectorInputs: [string][] = [
-  ["$V([1, 2, 3]).e(0)"],
-  ["$V([1, 2, 3]).e(0).max()"],
-  ["$V([]).e(0)"],
-  ["$V([]).e(100)"],
-  ["$V([1, 2, 3]).e(5)"],
+  // ["$V([1, 2, 3]).e(5)"],
+  ["vector.Vector.prototype.e.call($V([1, 2, 3], 5)"],
   ["$V([1]).e(1)"],
   ["$V([1, 2, 3]).dimension()"],
   ["$V([1, 2, 3]).modulus()"],
@@ -679,9 +676,10 @@ export const vectorInputs: [string][] = [
   ["$V([1, 2, 3]).max()"],
   ["$V([1, 2, 3]).inspection()"],
   ["$V([1, 2, 3]).setElements()"],
-  ["$V([1, 2, 3]).dot($V([4, 5, 6]))"],
   ["$V([1, 2, 3]).cross($V([4, 5, 6]))"],
   ["$V([1, 2, 3]).distanceFrom($V([3, 2, 1]))"],
   ["$V([1, 2, 3]).eql($V([1, 2, 3]))"],
-  ["$V([1, 2, 3]).indexOf(2)"]
+  ["$V([1, 2, 3]).indexOf(2)"],
+
+  ["dot.call($V([1, 2, 3]), $V([]))"],
 ]

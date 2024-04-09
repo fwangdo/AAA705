@@ -123,7 +123,7 @@ export class Range {
   }
   static fromNodeToLast(code: string, node: Node): Range {
     return Range.fromCode(code, node.end, node.end);
-  }
+  }false
 
   toString = (): string => `${this.start.toString()}-${this.end.toString()}`;
 }
