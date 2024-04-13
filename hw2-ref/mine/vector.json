@@ -28,12 +28,14 @@
     ["$V([1, 2, 3]).isParallelTo($V([1, 2])) !== null"],
     ["$V([1, 2, 3]).isParallelTo($V([1, 2, 3])) !== null"],
     ["$V([0, 0]).isParallelTo($V([0, 0])) == true"],
+    ["$V([1,2]).isParallelTo.call({angleFrom: () => '0'}, $V([0, 0]))"],
 
     ["$V([0, 0]).isAntiparallelTo($V([0, 0])) === false"],
     ["$V([1, 2, 3]).isAntiparallelTo($V([1, 2, 3]))"],
     ["$V([1, 2, 3]).isAntiparallelTo($V([1, 2])) !== null"],
     ["$V([1, 2, 3]).isAntiparallelTo($V([1, 2])) === null"],
     ["$V([0, 0]).isAntiparallelTo($V([0, 0])) !== null"],
+    ["$V([1, 2]).isAntiparallelTo.call({angleFrom: () => '+Math.PI'}, $V([0, 0]))"],
 
     ["$V([0, 0]).isPerpendicularTo($V([0, 0])) === true"],
     ["$V([0, 0]).isPerpendicularTo($V([0, 1, 2])) === null"],
@@ -57,10 +59,12 @@
     ["$V([1, 2, 3]).max()"],
     ["$V([-1, -1]).max()"],
     ["$V([1, 2, 3]).max() == 1"],
+    
+    ["$V([1, 2, 3]).angleFrom($V([1, 2, 3]))"],
+    ["$V([1, 2, 3]).angleFrom({length:'3'})"],
 
     ["$V([1, 2, 3]).modulus()"],
     ["$V([1, 2, 3]).each()"],
-    ["$V([1, 2, 3]).angleFrom($V([1, 2, 3]))"],
     ["$V([1, 2, 3]).dup()"],
     ["$V([1, 2, 3]).map()"],
     ["$V([1, 2, 3]).inspection()"],

@@ -75,6 +75,7 @@ function vector(code) {
     // Returns true iff the vector is parallel to the argument
     isParallelTo: function(vector) {
       var angle = this.angleFrom(vector);
+      console.log(angle)
       return (angle === null) ? null : angle == 0;
     },
 
