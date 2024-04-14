@@ -657,29 +657,102 @@ export class Mutator {
  */
 
 export const vectorInputs: [string][] = [
-  // ["$V([1, 2, 3]).e(5)"],
-  ["vector.Vector.prototype.e.call($V([1, 2, 3], 5)"],
+  ["$V([1, 2, 3]).e(5)"],
   ["$V([1]).e(1)"],
   ["$V([1]).e(1).e(1)"],
-  ["$V([1, 2, 3]).dimension()"],
+
+  ["$V([1, 2, 3]).dimensions()"],
+  
+  ["$V([1, 2, 3]).eql($V([1, 2, 3]))"],
+  ["$V([1, 2, 3]).eql($V([]))"],
+  ["$V([1, 2, 3]).eql()"],
+
+  ["$V([1, 2, 3]).eql({elements:false})"],
+  ["$V([null]).eql({elements:false, length:1})"],
+  ["$V([null]).eql({elements:[null], length:+1})"],
+
+  ["$V([2, 3]).eql($V([false, false]))"],
+  ["$V([false]).eql($V([false]))"],
+  ["$V([1]).eql($V(['1']))"],
+  ["$V([1]).eql($V([1, 2])) === false"],
+  ["$V([1, 3]).eql($V([2, 3])) === false"],
+  ["$V([1]).eql({elements:{elements:[1], length:'1', 0:1}, 0:1, length:'1'})"],
+
+  ["$V([1, 2, 3]).angleFrom($V([1, 2, 3]))"],
+  ["$V([1, 2, 3]).angleFrom($V([1, 2]))"],
+  ["$V([1, 2, 3]).angleFrom({elements:false, length:3})"],
+
+  ["$V([1, 2, 3]).isParallelTo()"],
+  ["$V([1, 2, 3]).isParallelTo($V([1, 2])) !== null"],
+  ["$V([1, 2, 3]).isParallelTo($V([1, 2, 3])) !== null"],
+  ["$V([0, 0]).isParallelTo($V([0, 0])) == true"],
+  ["$V([1,2]).isParallelTo.call({angleFrom: () => '0'}, $V([0, 0]))"],
+
+  ["$V([0, 0]).isAntiparallelTo($V([0, 0])) === false"],
+  ["$V([1, 2, 3]).isAntiparallelTo($V([1, 2, 3]))"],
+  ["$V([1, 2, 3]).isAntiparallelTo($V([1, 2])) !== null"],
+  ["$V([1, 2, 3]).isAntiparallelTo($V([1, 2])) === null"],
+  ["$V([0, 0]).isAntiparallelTo($V([0, 0])) !== null"],
+  ["$V([1, 2]).isAntiparallelTo.call({angleFrom: () => '3.1415926535897931'}, $V([0, 0]))"],
+
+  ["$V([0, 0]).isPerpendicularTo($V([0, 0])) === true"],
+  ["$V([0, 0]).isPerpendicularTo($V([0, 1, 2])) === null"],
+  ["$V([1, 2, 3]).isPerpendicularTo.call({dot: () => '0'}, $V([1, 2, 3]))"],
+
+  ["$V([1, 2, 3]).add($V([1, 2, 3]))"],
+  ["$V([1, 2, 3]).add($V([1, 2]))"],
+  ["$V([1, 2, 3]).add({elements:false, length:3})"],
+  ["$V([1, 2, 3]).add.call({length:3})"],
+  ["$V([1, 2, 3]).add.call({elements:{length:'3'}}, $V([1, 2, 3]))"],
+
+  ["$V([1, 2, 3]).subtract($V([1, 2, 3]))"],
+  ["$V([1, 2, 3]).subtract($V([1, 2]))"],
+  ["$V([1, 2, 3]).subtract({elements:false, length:3})"],
+  ["$V([1, 2, 3]).subtract.call({length:3})"],
+  ["$V([1, 2, 3]).subtract.call({elements:{length:'3'}}, $V([1, 2, 3]))"],
+  ["$V([1, 2, 3]).subtract.call({elements:{length:3}}, {elements:{length:'3'}}"],
+  
+  ["$V([1, 2, 3]).cross($V([4, 5, 6]))"],
+  ["$V([1, 2, 3]).cross($V([4, 5]))"],
+  ["$V([1, 2, 3]).cross({elements:false, length:3})"],
+  ["$V([1, 2, 3]).cross.call({length:3})"],
+  ["$V([1, 2, 3]).cross.call({elements:{length:'3'}, length:'3'}, $V([1, 2, 3]))"],
+  ["$V([1, 2, 3]).cross({length:'3'})"],
+  
+  ["$V([1, 2, 3]).distanceFrom($V([3, 2, 1]))"],
+  ["$V([1, 2, 3]).distanceFrom({anchor:true})"],
+  ["$V([1, 2, 3]).distanceFrom({anchor:false})"],
+  ["$V([1, 2, 3]).distanceFrom({anchor:false, elements: false, length:'3'})"],
+  
+  ["$V([1, 2, 3]).dot(0)"],
+  ["$V([1, 2, 3]).dot({elements:false, length:3})"],
+  ["$V([1, 2, 3]).dot.call({length:3})"],
+  ["$V([1, 2, 3]).dot.call({elements:{length:'3'}}, $V([1, 2, 3]))"],
+
+
+  ["$V([1, 2, 3]).multiply(0)"],
+
+  ["$V([1, 2, 3]).max()"],
+  ["$V([0, 1, 2]).max()"],
+  ["$V([-1, -1]).max()"],
+  ["$V([1, 2, 3]).max() == 1"],
+  ["$V([0, 1]).max.call({elements:['0']})"],
+  ["$V([false]).max()"],
+  
+  ["$V([1, 2, 3]).indexOf(2)"],
+  ["$V([1, 2, 3]).indexOf(null)"],
+  ["$V([1, 2, 3]).indexOf('3')"],
+
+  
+  ["$V([1, 2, 3]).angleFrom($V([1, 2, 3]))"],
+  ["$V([1, 2, 3]).angleFrom({length:'3'})"],
+
   ["$V([1, 2, 3]).modulus()"],
   ["$V([1, 2, 3]).each()"],
-  ["$V([1, 2, 3]).angleFrom($V([1, 2, 3]))"],
   ["$V([1, 2, 3]).dup()"],
   ["$V([1, 2, 3]).map()"],
-  ["$V([1, 2, 3]).isParallelTo()"],
-  ["$V([1, 2, 3]).isAntiParallelTo()"],
-  ["$V([1, 2, 3]).isPrependicularTo()"],
-  ["$V([1, 2, 3]).add()"],
-  ["$V([1, 2, 3]).subtract()"],
-  ["$V([1, 2, 3]).multiply()"],
-  ["$V([1, 2, 3]).max()"],
   ["$V([1, 2, 3]).inspection()"],
-  ["$V([1, 2, 3]).setElements()"],
-  ["$V([1, 2, 3]).cross($V([4, 5, 6]))"],
-  ["$V([1, 2, 3]).distanceFrom($V([3, 2, 1]))"],
-  ["$V([1, 2, 3]).eql($V([1, 2, 3]))"],
-  ["$V([1, 2, 3]).indexOf(2)"],
 
-  ["dot.call($V([1, 2, 3]), $V([]))"],
+  ["$V([1, 2, 3]).setElements({elements:{slice: () => false}})"], 
+  ["$V([1, 2, 3]).setElements()"]
 ]
