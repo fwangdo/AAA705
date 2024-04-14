@@ -35,7 +35,7 @@
     ["$V([1, 2, 3]).isAntiparallelTo($V([1, 2])) !== null"],
     ["$V([1, 2, 3]).isAntiparallelTo($V([1, 2])) === null"],
     ["$V([0, 0]).isAntiparallelTo($V([0, 0])) !== null"],
-    ["$V([1, 2]).isAntiparallelTo.call({angleFrom: () => '+Math.PI'}, $V([0, 0]))"],
+    ["$V([1, 2]).isAntiparallelTo.call({angleFrom: () => '3.1415926535897931'}, $V([0, 0]))"],
 
     ["$V([0, 0]).isPerpendicularTo($V([0, 0])) === true"],
     ["$V([0, 0]).isPerpendicularTo($V([0, 1, 2])) === null"],
