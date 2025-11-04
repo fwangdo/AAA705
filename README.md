@@ -34,4 +34,4 @@ JavaScript 코드를 **AST(Abstract Syntax Tree)** 기반으로 계측(instrumen
 - **Mocha / Chai** — 테스트 프레임워크
 
 ---
-이 구현체의 뼈대 코드는 각각 https://github.com/ku-plrg-classroom/js-cov와 https://github.com/ku-plrg-classroom/js-mutest에서 제공되었습니다.
+이 구현체의 뼈대 코드는 각각 https://github.com/ku-plrg-classroom/js-cov 와 https://github.com/ku-plrg-classroom/js-mutest 에서 제공되었습니다.
