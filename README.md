@@ -1,7 +1,5 @@
 # JavaScript Coverage Profiler
 
-📘 **고려대학교 AAA706 (Program Analysis) 수업 과제 구현물**  
-이 프로젝트는 고려대학교 대학원 **AAA706 프로그램 분석** 과목의 과제 구현물입니다.  
 JavaScript 코드를 **AST(Abstract Syntax Tree)** 기반으로 계측(instrumentation)하여  
 **함수 / 문장 / 분기 단위의 커버리지를 측정**하는 도구를 구현하였습니다.
 
